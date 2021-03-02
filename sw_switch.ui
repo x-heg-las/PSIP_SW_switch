@@ -81,7 +81,12 @@
        </row>
        <column>
         <property name="text">
-         <string/>
+         <string>IN</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>OUT</string>
         </property>
        </column>
       </widget>
@@ -137,7 +142,12 @@
        </row>
        <column>
         <property name="text">
-         <string/>
+         <string>IN</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>OUT</string>
         </property>
        </column>
       </widget>
@@ -177,7 +187,7 @@
      <x>0</x>
      <y>0</y>
      <width>808</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAbout">

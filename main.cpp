@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     SW_switch w;
-    w.initialize();
+    //w.initialize();
     w.show();
     return a.exec();
 }

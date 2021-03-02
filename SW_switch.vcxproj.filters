@@ -45,12 +45,10 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Port.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <QtMoc Include="sw_switch.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Port.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -14,12 +14,11 @@ class SW_switch : public QMainWindow
 public:
     SW_switch(QWidget *parent = Q_NULLPTR);
     void* initialize();
-    Interfaces interfaces;
+    Interfaces* interfaces;
 
 public slots:
-    void set_status(PDU* pdu, NetworkInterface iface);
-signals:
-    void update_stats(PDU* pdu, NetworkInterface iface);
+    void set_status(Port port_in, Port port_out);
+
 
 private:
     Ui::SW_switchClass ui;
