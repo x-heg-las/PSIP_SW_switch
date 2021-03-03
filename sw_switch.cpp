@@ -26,7 +26,7 @@ SW_switch::SW_switch(QWidget *parent)
 
     //Ports in switch
     Port port_1("9.0.0.10");
-    Port port_2("9.0.0.12");
+    Port port_2("10.0.0.12");
 
     interfaces->initiatePort(port_1, interfaces);
     interfaces->initiatePort(port_2, interfaces);

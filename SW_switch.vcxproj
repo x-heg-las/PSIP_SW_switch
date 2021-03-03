@@ -65,7 +65,7 @@
     <Link>
       <AdditionalLibraryDirectories>D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtinsd\lib;$(Qt_LIBPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Lib\x64;D:\Qt\5.15.2\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>tins.lib;Packet.lib;Iphlpapi.lib;Ws2_32.lib;$(Qt_LIBS_);wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>wpcap.dll;Packet.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>wpcap.dll;</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
