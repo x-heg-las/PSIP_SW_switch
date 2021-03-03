@@ -21,6 +21,7 @@ public:
 	Port() {};
 
 	Port(std::string interface_) {
+		http_in = http_out = 0;
 		interface = interface_;
 		std::wstring name = NetworkInterface(IPv4Address(interface_)).friendly_name();
 		interfaceName = std::string(name.begin(), name.end());
@@ -62,9 +63,12 @@ public:
 	std::string getInterfaceName() {
 		return interfaceName;
 	}
-	std::unordered_map<Tins::PDU::PDUType, int> getInStats();
-	std::unordered_map<Tins::PDU::PDUType, int> getOutStats();
-	void updateStats(PDU* pdu, Port out_port);
+	std::unordered_map<Tins::PDU::PDUType, int>& getInStats();
+	std::unordered_map<Tins::PDU::PDUType, int>& getOutStats();
+	void updateStats(PDU* pdu, Port& out_port, std::string payload);
+
+	int http_in;
+	int http_out;
 
 	pcap_t* handle;
 private:

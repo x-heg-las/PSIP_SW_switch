@@ -11,9 +11,6 @@
 #include <QTableWidgetItem>
 #include <QThread>
 
-
-
-//Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 using namespace Tins;
 
 SW_switch::SW_switch(QWidget *parent)
@@ -63,24 +60,20 @@ void SW_switch::set_status(Port port_in, Port  port_out) {
     in_stream->setItem(2,0, new QTableWidgetItem(QString::number(in_values[PDU::PDUType::IP])));
     in_stream->setItem(3,0, new QTableWidgetItem(QString::number(in_values[PDU::PDUType::TCP])));
     in_stream->setItem(4,0, new QTableWidgetItem(QString::number(in_values[PDU::PDUType::UDP])));
-    //in_stream->setItem(5,0, new QTableWidgetItem(in_values[PDU::PDUType::HTTP]));
+    in_stream->setItem(5,0, new QTableWidgetItem(QString::number(port_in.http_in)));
     in_stream->setItem(6,0, new QTableWidgetItem(QString::number(in_values[PDU::PDUType::ICMP])));
-   /* in_stream->setItem(
-    in_stream->setItem();
-    in_stream->setItem();*/
-
+ 
 
     //OUT
-    auto out_values = port_out.getInStats();
+    auto out_values = port_out.getOutStats();
     out_stream->setItem(0, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::ETHERNET_II])));
     out_stream->setItem(1, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::ARP])));
     out_stream->setItem(2, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::IP])));
     out_stream->setItem(3, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::TCP])));
     out_stream->setItem(4, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::UDP])));
-    //out_stream->setItem(5,1, new QTableWidgetItem(in_values[PDU::PDUType::HTTP]));
+    out_stream->setItem(5,1, new QTableWidgetItem(QString::number(port_out.http_out)));
     out_stream->setItem(6, 1, new QTableWidgetItem(QString::number(out_values[PDU::PDUType::ICMP])));
 
-   // ui.port_1->setItem(1, 0, new QTableWidgetItem(77));
-    //ui.port_1->update();
+
 }
 
