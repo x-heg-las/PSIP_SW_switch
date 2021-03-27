@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>808</width>
-    <height>612</height>
+    <width>820</width>
+    <height>658</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -180,13 +180,26 @@
      <string>TextLabel</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="clearStats">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>550</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CLEAR</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>808</width>
+     <width>820</width>
      <height>26</height>
     </rect>
    </property>
@@ -199,9 +212,17 @@
     <property name="title">
      <string>Statistic</string>
     </property>
+    <addaction name="actionCAM"/>
+    <addaction name="actionSTATISTICS"/>
+   </widget>
+   <widget class="QMenu" name="menuCAm">
+    <property name="title">
+     <string>CAM</string>
+    </property>
    </widget>
    <addaction name="menuAbout"/>
    <addaction name="menuStatistic"/>
+   <addaction name="menuCAm"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -212,6 +233,21 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionCAM_TABLE">
+   <property name="text">
+    <string>CAM TABLE</string>
+   </property>
+  </action>
+  <action name="actionCAM">
+   <property name="text">
+    <string>CAM</string>
+   </property>
+  </action>
+  <action name="actionSTATISTICS">
+   <property name="text">
+    <string>STATISTICS</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>

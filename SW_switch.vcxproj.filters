@@ -38,9 +38,18 @@
     <ClCompile Include="Port.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="camview.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="sw_switch.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="camview.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -51,5 +60,13 @@
     <QtMoc Include="Port.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="camview.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

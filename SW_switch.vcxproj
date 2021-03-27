@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include;D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtins\include;%(AdditionalIncludeDirectories);$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include;D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtins\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include;D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtins\include;$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include;D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtins\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>TINS_STATIC;$(Qt_DEFINES_);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -58,7 +58,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtinsd\include;%(AdditionalIncludeDirectories);$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\libtins\libtinsd\include;%(AdditionalIncludeDirectories);$(Qt_INCLUDEPATH_);D:\patoh\Pracovná plocha\FIIT  dokumenty\LS2\PSIP\Projekt SWSwich\Resources\npcap\Include;.\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>TINS_STATIC;$(Qt_DEFINES_);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
@@ -109,14 +109,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="sw_switch.qrc" />
+    <QtUic Include="camview.ui" />
     <QtUic Include="sw_switch.ui" />
     <QtMoc Include="sw_switch.h" />
+    <ClCompile Include="camview.cpp" />
+    <ClCompile Include="Filter.cpp" />
     <ClCompile Include="Port.cpp" />
     <ClCompile Include="sw_switch.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Port.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="camview.h" />
+    <ClInclude Include="Filter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
