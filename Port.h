@@ -88,6 +88,7 @@ public:
 	std::unordered_map<Tins::PDU::PDUType, int>& getOutStats();
 	void updateStats(PDU* pdu, Port& out_port, std::string payload);
 
+
 	int http_in;
 	int http_out;
 	
@@ -100,9 +101,11 @@ private:
 	std::unordered_map<Tins::PDU::PDUType, int> OUT_STAT;
 };
 
+typedef std::unordered_map<Tins::HWAddress<6>, std::pair<Port, std::chrono::time_point<chrono::system_clock>>>  CamTable;
 
 class Interfaces : public QObject {
 	Q_OBJECT
+
 
 	public:
 
@@ -112,18 +115,21 @@ class Interfaces : public QObject {
 		static std::vector<Port> ports;
 		static int initiatePort(Port port, Interfaces *interf);
 		void update_statistics( Port& port_in, Port & port_out) { emit request_update_statistics(port_in, port_out); }
+		void update_table(CamTable& table) { emit request_table_update(table); };
+		void cam_cleaner();
+		int get_timeout();
 
 		 std::unordered_map<Tins::HWAddress<6>, std::pair<Port, std::chrono::time_point<chrono::system_clock>>> CAM_TABLE;
 		 void insert_mac(Filter::pdu_info packet_info, Port port);
 		 Port* find_mac(Filter::pdu_info packet_info);
 		 void reset_statistics();
-		 void reset_cam();
+		 void reset_cam(Port port);
+		 void reset_cam_all();
 		 void request_update_cam();
+
 
 signals: 
 	    void request_update_statistics(Port, Port);
+		void request_table_update(CamTable);
 		
-	
-
-
 };

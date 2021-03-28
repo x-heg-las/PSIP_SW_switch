@@ -6,14 +6,23 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>820</width>
-    <height>658</height>
+    <width>1271</width>
+    <height>924</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>SW_switch</string>
   </property>
+  <property name="animated">
+   <bool>false</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>false</bool>
+  </property>
   <widget class="QWidget" name="centralWidget">
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
@@ -37,7 +46,7 @@
      <rect>
       <x>100</x>
       <y>30</y>
-      <width>691</width>
+      <width>371</width>
       <height>251</height>
      </rect>
     </property>
@@ -98,7 +107,7 @@
      <rect>
       <x>100</x>
       <y>290</y>
-      <width>691</width>
+      <width>371</width>
       <height>251</height>
      </rect>
     </property>
@@ -170,7 +179,7 @@
    <widget class="QLabel" name="port_2_label">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>150</y>
       <width>55</width>
       <height>16</height>
@@ -179,12 +188,15 @@
     <property name="text">
      <string>TextLabel</string>
     </property>
+    <property name="wordWrap">
+     <bool>false</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="clearStats">
     <property name="geometry">
      <rect>
-      <x>110</x>
-      <y>550</y>
+      <x>120</x>
+      <y>570</y>
       <width>101</width>
       <height>41</height>
      </rect>
@@ -193,46 +205,103 @@
      <string>CLEAR</string>
     </property>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>820</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuAbout">
-    <property name="title">
-     <string>About</string>
+   <widget class="QWidget" name="verticalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>30</y>
+      <width>381</width>
+      <height>331</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QTableWidget" name="camTable">
+       <property name="alternatingRowColors">
+        <bool>false</bool>
+       </property>
+       <property name="showGrid">
+        <bool>true</bool>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
+       <property name="cornerButtonEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="rowCount">
+        <number>5</number>
+       </property>
+       <attribute name="horizontalHeaderCascadingSectionResizes">
+        <bool>false</bool>
+       </attribute>
+       <attribute name="verticalHeaderHighlightSections">
+        <bool>true</bool>
+       </attribute>
+       <attribute name="verticalHeaderStretchLastSection">
+        <bool>true</bool>
+       </attribute>
+       <row/>
+       <row/>
+       <row/>
+       <row/>
+       <row/>
+       <column>
+        <property name="text">
+         <string>Port</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>MAC</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Timer</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QPushButton" name="clearCamTable">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>380</y>
+      <width>93</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CLEAR TABLE</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuStatistic">
-    <property name="title">
-     <string>Statistic</string>
-    </property>
-    <addaction name="actionCAM"/>
-    <addaction name="actionSTATISTICS"/>
-   </widget>
-   <widget class="QMenu" name="menuCAm">
-    <property name="title">
-     <string>CAM</string>
+   <widget class="QSpinBox" name="timer">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>380</y>
+      <width>42</width>
+      <height>22</height>
+     </rect>
     </property>
    </widget>
-   <addaction name="menuAbout"/>
-   <addaction name="menuStatistic"/>
-   <addaction name="menuCAm"/>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>380</y>
+      <width>55</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Timer:</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QToolBar" name="mainToolBar">
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionCAM_TABLE">
    <property name="text">
     <string>CAM TABLE</string>

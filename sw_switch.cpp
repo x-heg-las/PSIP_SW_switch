@@ -41,13 +41,26 @@ SW_switch::SW_switch(QWidget *parent)
     ui.port_2_label->setText(port_2.getInterfaceName().c_str());
 
     connect(ui.actionCAM, &QAction::triggered, this, &SW_switch::open_cam);
+    connect(ui.clearCamTable, &QPushButton::clicked, this, &SW_switch::reset_cam);
     connect(clearStats, &QPushButton::clicked, this, &SW_switch::reset_stats);
+    connect(interfaces, SIGNAL(request_table_update(CamTable)), this, SLOT(set_cam(CamTable)));
     connect(interfaces, SIGNAL(request_update_statistics(Port, Port)), this, SLOT(set_status(Port, Port )));
     connect(thread, SIGNAL(destroyed()), interfaces, SLOT(deleteLater()));
 }
 
-void SW_switch::set_cam() {
-    
+void SW_switch::set_cam(CamTable content) {
+    QTableWidget* camTable = ui.camTable;
+    camTable->clear();
+    int counter = 0;
+    for (auto row : content) {
+        int id = row.second.first.getPortId();
+        camTable->setItem(counter, 0, new QTableWidgetItem(QString(row.second.first.getInterfaceName().c_str())));
+        std::string mac = row.first.to_string().c_str();
+        camTable->setItem(counter, 1, new QTableWidgetItem(QString(row.first.to_string().c_str())));
+        double timestamp = (double)interfaces->get_timeout() + std::chrono::duration<double>(row.second.second - std::chrono::system_clock::now()).count();
+        camTable->setItem(counter, 2, new QTableWidgetItem(QString::number((int) timestamp)));
+        counter++;
+    }
 }
 
 
@@ -125,6 +138,11 @@ void SW_switch::reset_stats()
 
 
     }
+}
+
+void SW_switch::reset_cam()
+{
+    interfaces->reset_cam_all();
 }
 
 void SW_switch::open_cam() {   

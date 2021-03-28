@@ -27,7 +27,8 @@ public slots:
     void open_cam();
     void set_status(Port port_in, Port port_out);
     void reset_stats();
-    void set_cam();
+    void reset_cam();
+    void set_cam(CamTable content);
 
 
 private:
