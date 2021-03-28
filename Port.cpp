@@ -12,6 +12,11 @@
 #include <unordered_map>
 #include <regex>
 
+#define ONLY_IN 2
+#define ONLY_OUT 4
+#define DONT_RESEND 8
+#define RESEND 16
+#define WAITING 7
 
 using namespace std;
 using namespace Tins;
@@ -89,15 +94,17 @@ void startSniffing(Port& port, Interfaces *interf) {
 		pcap_pkthdr* head = new pcap_pkthdr;
 		const u_char* packet = new  u_char[2300];
 		auto timer = std::chrono::steady_clock::now();
+		auto keepalive = std::chrono::steady_clock::now();;
 ///////////////		
 		TCPStreamFollower follower;
 
 		while (true) {
+	
 			//aktualizovanie
 
 			if (reset_flag[this_port_id]) {
 				std::lock_guard<std::mutex> lock(stat_mutex);
-				port.reset_statistics();
+				global_ports[port.getPortId()].reset_statistics();
 				reset_flag[this_port_id] = 0;
 			}
 			
@@ -108,9 +115,9 @@ void startSniffing(Port& port, Interfaces *interf) {
 			
 			
 			//kontrola ci rozhranie prijalo ramec poslednych 6 sekund
-			if ((std::chrono::duration<double>(std::chrono::steady_clock::now() - timer).count()) > 7) {
+			if ((std::chrono::duration<double>(std::chrono::steady_clock::now() - timer).count()) > WAITING) {
 				std::lock_guard<std::mutex> lock(cam_mutex);
-				interf->reset_cam(port);
+				interf->reset_cam(global_ports[port.getPortId()]);
 				std::lock_guard<mutex> lockint(intf_mutex);
 				active_interfaces[port.getPortId()] = 0;
 			}
@@ -123,6 +130,7 @@ void startSniffing(Port& port, Interfaces *interf) {
 			if (packet){
 
 				
+				
 				timer = std::chrono::steady_clock::now();
 				Filter::pdu_info packet_info = Filter::build_info(packet, head->len);
 				//pridanie zaznamu do CAM
@@ -130,26 +138,34 @@ void startSniffing(Port& port, Interfaces *interf) {
 				//odoslanie na port/y
 				
 				Port* handler_to_send_from = interf->find_mac(packet_info);
-			
+				int resend = 0;
 				if (handler_to_send_from != nullptr) {
-					//poslem na vybrany interface
-
-					pcap_sendpacket(handler_to_send_from->handle, packet, head->len);
+					//aby neposielal na rovnaky port
+					if (handler_to_send_from->getPortId() == port.getPortId()) 
+						resend = DONT_RESEND;
+					else {
+						resend = 0;
+						//poslem na vybrany interface
+						pcap_sendpacket(handler_to_send_from->handle, packet, head->len);
+					}
 					char* temp = new char[2000];
 					memcpy(temp, packet, head->len);
 					std::string temp_s(temp, head->len);
+					if (handler_to_send_from->getPortId() < 0) {
+						int a = 8 + 3;
+					}
 
 					EthernetII* eth = new EthernetII(packet, head->len);
 					if (eth->payload_type() <= 1500) {
 						Dot3* dot = new Dot3(packet, head->len);
-						port.updateStats(dot, global_ports[handler_to_send_from->getPortId()], temp_s);
-						interf->update_statistics(port, global_ports[handler_to_send_from->getPortId()]);
+						global_ports[port.getPortId()].updateStats(dot, global_ports[handler_to_send_from->getPortId()], temp_s, resend);
+						interf->update_statistics(global_ports[port.getPortId()], global_ports[handler_to_send_from->getPortId()]);
 						delete dot;
 					}
 					else {
-						port.updateStats(eth, global_ports[handler_to_send_from->getPortId()], temp_s);
+						global_ports[port.getPortId()].updateStats(eth, global_ports[handler_to_send_from->getPortId()], temp_s, resend);
 						//signal pre GUI
-						interf->update_statistics(port, global_ports[handler_to_send_from->getPortId()]);
+						interf->update_statistics(global_ports[port.getPortId()], global_ports[handler_to_send_from->getPortId()]);
 					}
 					delete eth;
 					delete[]temp;
@@ -161,10 +177,11 @@ void startSniffing(Port& port, Interfaces *interf) {
 						PacketSender sender;
 
 						if (iface_to_send_from.name().compare(adapter.name())) {
+							
 
 							pcap_sendpacket(a.handle, packet, head->len);
 
-							//TODO ::  Pozor toto funguje len ak su 2 porty !!! oprav 
+							//TODO ::  Pozri si toto este
 						
 
 							char* temp = new char[2000];
@@ -174,14 +191,14 @@ void startSniffing(Port& port, Interfaces *interf) {
 							EthernetII* eth = new EthernetII(packet, head->len);
 							if (eth->payload_type() <= 1500) {
 								Dot3* dot = new Dot3(packet, head->len);
-								port.updateStats(dot, global_ports[a.getPortId()], temp_s);
-								interf->update_statistics(port, global_ports[a.getPortId()]);
+								global_ports[port.getPortId()].updateStats(dot, global_ports[a.getPortId()], temp_s, 0);
+								interf->update_statistics(global_ports[port.getPortId()], global_ports[a.getPortId()]);
 								delete dot;
 							}
 							else {
-								port.updateStats(eth, global_ports[a.getPortId()], temp_s);
+								global_ports[port.getPortId()].updateStats(eth, global_ports[a.getPortId()], temp_s, 0);
 								//signal pre GUI
-								interf->update_statistics(port, global_ports[a.getPortId()]);
+								interf->update_statistics(global_ports[port.getPortId()], global_ports[a.getPortId()]);
 							}
 							delete eth;
 							delete[]temp;
@@ -257,38 +274,42 @@ std::unordered_map<Tins::PDU::PDUType, int>& Port::getOutStats()
 
 
 
-void Port::updateStats(PDU* pdu,Port& out_port, std::string payload)
+void Port::updateStats(PDU* pdu,Port& out_port, std::string payload, int resend)
 {
 	std::lock_guard<std::mutex> lock(stat_mutex);
 	PDU* packet = pdu;
 	while (packet) {
+		if (resend != ONLY_OUT) {
+			if (packet->pdu_type() == PDU::PDUType::TCP) {
 
-		if (packet->pdu_type() == PDU::PDUType::TCP) {
-
-			Tins::TCP *tcp = packet->find_pdu<Tins::TCP>();
-			if (tcp->dport() == 80 || tcp->sport() == 80) {
-				if (find_http(payload)) {
-					http_in++;
-					out_port.http_out++;
+				Tins::TCP* tcp = packet->find_pdu<Tins::TCP>();
+				if (tcp->dport() == 80 || tcp->sport() == 80) {
+					if (find_http(payload)) {
+						http_in++;
+						if (resend != DONT_RESEND)
+							global_ports[out_port.getPortId()].http_out++;
+					}
 				}
 			}
+
+			if (IN_STAT.find(packet->pdu_type()) != IN_STAT.end()) {
+				IN_STAT[packet->pdu_type()] ++;
+			}
+			else
+				IN_STAT[packet->pdu_type()] = 1;
 		}
 
-		if (IN_STAT.find(packet->pdu_type()) != IN_STAT.end()) {
-			IN_STAT[packet->pdu_type()] ++;
-		}
-		else
-			IN_STAT[packet->pdu_type()] = 1;
+		if(resend != ONLY_IN)
 		{
 			std::lock_guard<std::mutex> lock(intf_mutex);
-			if (active_interfaces[out_port.getPortId()]) {
-				auto OUT_STAT = out_port.getOutStats();
+			if (active_interfaces[out_port.getPortId()] && resend != DONT_RESEND) {
+				auto OUT_STAT = global_ports[out_port.getPortId()].getOutStats();
 
 				if (OUT_STAT.find(packet->pdu_type()) != OUT_STAT.end()) {
-					out_port.OUT_STAT[packet->pdu_type()] ++;
+					global_ports[out_port.getPortId()].OUT_STAT[packet->pdu_type()] ++;
 				}
 				else {
-					out_port.OUT_STAT[packet->pdu_type()] = 1;
+					global_ports[out_port.getPortId()].OUT_STAT[packet->pdu_type()] = 1;
 				}
 			}
 		}
@@ -308,6 +329,9 @@ void Interfaces::insert_mac(Filter::pdu_info packet_info, Port recieving_port)
 	}
 	else {
 		std::lock_guard<std::mutex> guard(cam_mutex);
+		if (global_cam[packet_info.src_mac].first.getPortId() != recieving_port.getPortId()) {
+			global_cam[packet_info.src_mac].first = recieving_port;
+		}
 		global_cam[packet_info.src_mac].second = std::chrono::system_clock::now();
 	}
 
@@ -372,4 +396,16 @@ int Interfaces::get_timeout() {
 	return cam_timer;
 }
 
+void Interfaces::set_timeout(int time) {
+	cam_timer = time;
+}
 
+//void sendLoop(pcap_t* handler) {
+//
+//	EthernetII eth("A2:AA:AA:AA:AA:AA", "A2:AA:AA:AA:AA:AA");
+//	eth.payload_type(0x9000);
+//	const u_char *ar = new u_char[2000];
+//	eth.extract_metadata((uint8_t*)ar, eth.size());
+//
+//	pcap_sendpacket(handler,ar, eth.size());
+//}

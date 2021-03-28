@@ -39,7 +39,9 @@ SW_switch::SW_switch(QWidget *parent)
     //NetworkInterface(IPv4Address(port_1)).friendly_name()
     ui.port_1_label->setText(port_1.getInterfaceName().c_str());
     ui.port_2_label->setText(port_2.getInterfaceName().c_str());
+    ui.timeout->setText(QString::number(interfaces->get_timeout()));
 
+    connect(ui.submitTime, &QPushButton::clicked, this, &SW_switch::changeTimeout);
     connect(ui.actionCAM, &QAction::triggered, this, &SW_switch::open_cam);
     connect(ui.clearCamTable, &QPushButton::clicked, this, &SW_switch::reset_cam);
     connect(clearStats, &QPushButton::clicked, this, &SW_switch::reset_stats);
@@ -63,6 +65,17 @@ void SW_switch::set_cam(CamTable content) {
     }
 }
 
+void SW_switch::changeTimeout()
+{
+    bool ok = false; 
+    int time = ui.timerEdit->text().toInt(&ok, 10);
+    if (ok) {
+        interfaces->set_timeout(time);
+        ui.timeout->setText(QString::number(time));
+    }
+    ui.timerEdit->setText("");
+}
+
 
 void SW_switch::set_status(Port port_in, Port  port_out) {
     // ROWS: 1. EthernetII, 2. ARP, 3. IP, 4. TCP, 5. UDP, 6. HTTP, 7. ICMP
@@ -72,12 +85,22 @@ void SW_switch::set_status(Port port_in, Port  port_out) {
     QTableWidget* out_stream = nullptr;
 
     if ((port_in.getInterfaceName()).compare(ui.port_1_label->text().toLocal8Bit().constData())) {
-        in_stream = ui.port_1;
-        out_stream = ui.port_2;
+        if (port_in.getPortId() == port_out.getPortId()) {
+            in_stream = out_stream = ui.port_1;
+        }
+        else {
+            in_stream = ui.port_1;
+            out_stream = ui.port_2;
+        }
     }
     else {
-        in_stream = ui.port_2;
-        out_stream = ui.port_1;
+        if (port_in.getPortId() == port_out.getPortId()) {
+            in_stream = out_stream = ui.port_2;
+        }
+        else {
+            in_stream = ui.port_2;
+            out_stream = ui.port_1;
+        }
     }
 
     //IN

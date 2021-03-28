@@ -29,7 +29,7 @@ public slots:
     void reset_stats();
     void reset_cam();
     void set_cam(CamTable content);
-
+    void changeTimeout();
 
 private:
     Ui::SW_switchClass ui;
