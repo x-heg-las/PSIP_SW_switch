@@ -22,7 +22,8 @@ public:
     void* initialize();
     Interfaces* interfaces;
     CamView* cam;
-   
+    static int filter_id;
+
 public slots:
     void open_cam();
     void set_status(Port port_in, Port port_out);
@@ -30,9 +31,12 @@ public slots:
     void reset_cam();
     void set_cam(CamTable content);
     void changeTimeout();
+    void addFilter();
+    void removeFilter();
 
 private:
     Ui::SW_switchClass ui;
+    
 
     
 };

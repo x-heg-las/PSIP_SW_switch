@@ -27,7 +27,7 @@ public:
 
 	Port(std::string interface_, int id) {
 		port_id = id;
-		
+		port80_in = port80_out = 0;
 		http_in = http_out = 0;
 		interface = interface_;
 		std::wstring name = NetworkInterface(IPv4Address(interface_)).friendly_name();
@@ -58,13 +58,16 @@ public:
 			NULL,	//auth
 			errbuf     // error buffer
 		);
-		//pcap_compile(handle_, &fp, "(not ip dst 239.255.255.250) and (not ether proto 0x9000)", 1, 0xffffff);
+		
+
 		handle = handle_;
-		pcap_compile(handle_, bf, "not ip src 10.0.0.12 and not ip src 9.0.0.10", 1, 1) ;
+		
 		pcap_setfilter(handle_, bf);
+		
 		
 	}
 
+	
 	std::string getInterfaceAddr() {
 		return interface;
 		
@@ -79,6 +82,7 @@ public:
 	}
 
 	void reset_statistics() {
+		port80_in = port80_out = 0;
 		http_in = http_out = 0;
 		IN_STAT.clear();
 		OUT_STAT.clear();
@@ -87,10 +91,17 @@ public:
 	std::unordered_map<Tins::PDU::PDUType, int>& getInStats();
 	std::unordered_map<Tins::PDU::PDUType, int>& getOutStats();
 	void updateStats(PDU* pdu, Port& out_port, std::string payload, int resend);
-
+	void addFilter(pdu_info filter);
+	std::vector<pdu_info> getFilters() { return filters; }
+	
+	void removeFilter(int index) {
+		filters.erase(filters.begin() + index);
+	}
 
 	int http_in;
 	int http_out;
+	int port80_in;
+	int port80_out;
 	
 	pcap_t* handle;
 private:
@@ -99,6 +110,7 @@ private:
 	std::string interface, interfaceName;
 	std::unordered_map<Tins::PDU::PDUType, int> IN_STAT;
 	std::unordered_map<Tins::PDU::PDUType, int> OUT_STAT;
+	std::vector<pdu_info> filters;
 };
 
 typedef std::unordered_map<Tins::HWAddress<6>, std::pair<Port, std::chrono::time_point<chrono::system_clock>>>  CamTable;
@@ -121,12 +133,14 @@ class Interfaces : public QObject {
 		void set_timeout(int time);
 
 		 std::unordered_map<Tins::HWAddress<6>, std::pair<Port, std::chrono::time_point<chrono::system_clock>>> CAM_TABLE;
-		 void insert_mac(Filter::pdu_info packet_info, Port port);
-		 Port* find_mac(Filter::pdu_info packet_info);
+		 void insert_mac(pdu_info packet_info, Port port);
+		 Port* find_mac(pdu_info packet_info);
 		 void reset_statistics();
 		 void reset_cam(Port port);
 		 void reset_cam_all();
 		 void request_update_cam();
+		 void assignFilter(pdu_info filter, std::string interface);
+		 void deleteFilter(int id);
 
 
 signals: 

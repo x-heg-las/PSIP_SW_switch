@@ -16,7 +16,7 @@
 #define ONLY_OUT 4
 #define DONT_RESEND 8
 #define RESEND 16
-#define WAITING 7
+#define WAITING 8
 
 using namespace std;
 using namespace Tins;
@@ -32,6 +32,9 @@ CamTable global_cam;
 mutex cam_mutex;
 mutex stat_mutex;
 mutex intf_mutex;
+
+
+bool authorize(pdu_info packet, Port port, int direction);
 
 void gui_updater(Interfaces* iface) {
 
@@ -114,6 +117,7 @@ void startSniffing(Port& port, Interfaces *interf) {
 			//Packet packet_to_send;	
 			
 			
+			
 			//kontrola ci rozhranie prijalo ramec poslednych 6 sekund
 			if ((std::chrono::duration<double>(std::chrono::steady_clock::now() - timer).count()) > WAITING) {
 				std::lock_guard<std::mutex> lock(cam_mutex);
@@ -132,7 +136,14 @@ void startSniffing(Port& port, Interfaces *interf) {
 				
 				
 				timer = std::chrono::steady_clock::now();
-				Filter::pdu_info packet_info = Filter::build_info(packet, head->len);
+				pdu_info packet_info = Filter::build_info(packet, head->len);
+
+				if (!authorize(packet_info, port, IN)) {
+					packet = NULL;
+					continue;
+				}
+
+
 				//pridanie zaznamu do CAM
 				interf->insert_mac(packet_info, port);
 				//odoslanie na port/y
@@ -140,22 +151,39 @@ void startSniffing(Port& port, Interfaces *interf) {
 				Port* handler_to_send_from = interf->find_mac(packet_info);
 				int resend = 0;
 				if (handler_to_send_from != nullptr) {
+					
+					char* temp = new char[2000];
+					memcpy(temp, packet, head->len);
+					std::string temp_s(temp, head->len);
+					EthernetII* eth = new EthernetII(packet, head->len);
+					
+					
 					//aby neposielal na rovnaky port
+					bool filtered = true;
 					if (handler_to_send_from->getPortId() == port.getPortId()) 
 						resend = DONT_RESEND;
 					else {
 						resend = 0;
-						//poslem na vybrany interface
-						pcap_sendpacket(handler_to_send_from->handle, packet, head->len);
-					}
-					char* temp = new char[2000];
-					memcpy(temp, packet, head->len);
-					std::string temp_s(temp, head->len);
-					if (handler_to_send_from->getPortId() < 0) {
-						int a = 8 + 3;
-					}
 
-					EthernetII* eth = new EthernetII(packet, head->len);
+
+						bool filtered = authorize(packet_info, global_ports[handler_to_send_from->getPortId()], OUT);
+						
+						// ak je premenna filtered true tak odosle packet
+						if (filtered) {
+							//poslem na vybrany interface
+							pcap_sendpacket(handler_to_send_from->handle, packet, head->len);
+						}
+						else if (resend == 0) {
+							resend = ONLY_IN;
+						}
+
+							
+						
+					}
+					
+					
+					
+
 					if (eth->payload_type() <= 1500) {
 						Dot3* dot = new Dot3(packet, head->len);
 						global_ports[port.getPortId()].updateStats(dot, global_ports[handler_to_send_from->getPortId()], temp_s, resend);
@@ -175,28 +203,52 @@ void startSniffing(Port& port, Interfaces *interf) {
 					for (auto& a : Interfaces::ports) {
 						NetworkInterface iface_to_send_from(IPv4Address(a.getInterfaceAddr().c_str()));
 						PacketSender sender;
-
+						int direction = 0;
 						if (iface_to_send_from.name().compare(adapter.name())) {
 							
-
-							pcap_sendpacket(a.handle, packet, head->len);
-
-							//TODO ::  Pozri si toto este
-						
-
 							char* temp = new char[2000];
 							memcpy(temp, packet, head->len);
 							std::string temp_s(temp, head->len);
 
 							EthernetII* eth = new EthernetII(packet, head->len);
+
+							bool filtered = true;
+							
+
 							if (eth->payload_type() <= 1500) {
 								Dot3* dot = new Dot3(packet, head->len);
-								global_ports[port.getPortId()].updateStats(dot, global_ports[a.getPortId()], temp_s, 0);
+								if (dot->dst_addr() == HWAddress< 6 >("01:00:0c:cc:cc:cc")) {
+									
+									delete []temp;
+									delete dot;
+									delete eth;
+									break;
+								}else
+									delete dot;
+								
+							}
+							else {
+								filtered = authorize(packet_info, global_ports[a.getPortId()], OUT);
+
+								if (filtered) {
+									pcap_sendpacket(a.handle, packet, head->len);
+									direction = 0;
+								}
+								else {
+									direction = ONLY_IN;
+								}
+								
+
+							}
+							
+							if (eth->payload_type() <= 1500) {
+								Dot3* dot = new Dot3(packet, head->len);
+								global_ports[port.getPortId()].updateStats(dot, global_ports[a.getPortId()], temp_s, direction);
 								interf->update_statistics(global_ports[port.getPortId()], global_ports[a.getPortId()]);
 								delete dot;
 							}
 							else {
-								global_ports[port.getPortId()].updateStats(eth, global_ports[a.getPortId()], temp_s, 0);
+								global_ports[port.getPortId()].updateStats(eth, global_ports[a.getPortId()], temp_s, direction);
 								//signal pre GUI
 								interf->update_statistics(global_ports[port.getPortId()], global_ports[a.getPortId()]);
 							}
@@ -243,6 +295,9 @@ int Interfaces::initiatePort(Port port, Interfaces *interf)
 	
 	qRegisterMetaType<CamTable>("CamTable");
 	qRegisterMetaType<Port>("Port");
+	qRegisterMetaType<std::string>("std::string");
+	qRegisterMetaType<pdu_info>("Filter::pdu_info");
+
 	try
 	{
 		
@@ -274,7 +329,7 @@ std::unordered_map<Tins::PDU::PDUType, int>& Port::getOutStats()
 
 
 
-void Port::updateStats(PDU* pdu,Port& out_port, std::string payload, int resend)
+void Port::updateStats(PDU* pdu, Port& out_port, std::string payload, int resend)
 {
 	std::lock_guard<std::mutex> lock(stat_mutex);
 	PDU* packet = pdu;
@@ -284,9 +339,15 @@ void Port::updateStats(PDU* pdu,Port& out_port, std::string payload, int resend)
 
 				Tins::TCP* tcp = packet->find_pdu<Tins::TCP>();
 				if (tcp->dport() == 80 || tcp->sport() == 80) {
+					
+					port80_in++;
+					if (resend != DONT_RESEND)
+						port80_out++;
+
+
 					if (find_http(payload)) {
 						http_in++;
-						if (resend != DONT_RESEND)
+						if (resend != DONT_RESEND )
 							global_ports[out_port.getPortId()].http_out++;
 					}
 				}
@@ -299,7 +360,7 @@ void Port::updateStats(PDU* pdu,Port& out_port, std::string payload, int resend)
 				IN_STAT[packet->pdu_type()] = 1;
 		}
 
-		if(resend != ONLY_IN)
+		if(resend != ONLY_IN )
 		{
 			std::lock_guard<std::mutex> lock(intf_mutex);
 			if (active_interfaces[out_port.getPortId()] && resend != DONT_RESEND) {
@@ -320,7 +381,7 @@ void Port::updateStats(PDU* pdu,Port& out_port, std::string payload, int resend)
 }
 
 
-void Interfaces::insert_mac(Filter::pdu_info packet_info, Port recieving_port)
+void Interfaces::insert_mac(pdu_info packet_info, Port recieving_port)
 {
 		
 	if (global_cam.find(packet_info.src_mac) == global_cam.end()) {
@@ -337,7 +398,7 @@ void Interfaces::insert_mac(Filter::pdu_info packet_info, Port recieving_port)
 
 }
 
-Port* Interfaces::find_mac(Filter::pdu_info packet_info)
+Port* Interfaces::find_mac(pdu_info packet_info)
 {
 	//broadcast
 	if(packet_info.dst_mac.is_broadcast()){
@@ -400,12 +461,164 @@ void Interfaces::set_timeout(int time) {
 	cam_timer = time;
 }
 
-//void sendLoop(pcap_t* handler) {
-//
-//	EthernetII eth("A2:AA:AA:AA:AA:AA", "A2:AA:AA:AA:AA:AA");
-//	eth.payload_type(0x9000);
-//	const u_char *ar = new u_char[2000];
-//	eth.extract_metadata((uint8_t*)ar, eth.size());
-//
-//	pcap_sendpacket(handler,ar, eth.size());
-//}
+void Interfaces::assignFilter(pdu_info filter, std::string interface) {
+	int id = -1;
+	for (auto port : global_ports) {
+		if (! port.second.getInterfaceName().compare(interface)) {
+			id = port.second.getPortId();
+			break;
+		}
+	}
+
+	if(id > 0)
+		global_ports[id].addFilter(filter);
+
+
+}
+
+void Interfaces::deleteFilter(int id) {
+	//std::lock_guard<std::mutex> lock(stat_mutex);
+
+	for (auto port : global_ports) {
+		int filterIndex = 0;
+
+		for (pdu_info filter : port.second.getFilters())
+		{
+			if (filter.id == id) {
+				global_ports[port.second.getPortId()].removeFilter(filterIndex);
+				return;
+			}
+			filterIndex++;
+
+		}
+	}
+}
+
+
+void Port::addFilter(pdu_info filter) {
+	filters.push_back(filter);
+}
+
+
+
+
+bool authorize(pdu_info packet, Port port, int direction) {
+
+	std::vector<pdu_info> filters;
+	{
+	//	std::lock_guard<std::mutex> lock(stat_mutex);
+		filters = global_ports[port.getPortId()].getFilters();
+	}
+
+	
+	for (pdu_info filter : filters) {
+		bool permision = filter.permit;
+		short check = 0;
+		Tins::IP::address_type anyIP = Tins::IP::address_type("0.0.0.0");
+		Tins::HWAddress<6> anyMAC = Tins::HWAddress<6>(0);
+
+		if (filter.direction == direction) {
+
+			if (filter.src_mac == anyMAC || filter.src_mac_set) {
+				if (filter.src_mac == anyMAC || filter.src_mac == packet.src_mac) {
+					check |= 1;
+				}
+				else {
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+			}
+			if (filter.dst_mac == anyMAC || filter.dst_mac_set) {
+				if (filter.dst_mac == anyMAC || filter.dst_mac == packet.dst_mac) {
+					check |= 1;
+				}
+				else {
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+			}
+			if (filter.src_ip_set) {
+				if (filter.src_ip == anyIP || filter.src_ip == packet.src_ip)
+					check |= 1;
+				else {
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+					
+			}
+			if (filter.dst_ip_set)
+				if (filter.dst_ip == anyIP || filter.dst_ip == packet.dst_ip)
+					check |= 1;
+				else {
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+					
+			
+			if (filter.protocol_L3 != NO && filter.protocol_L3 != icmp) {
+				if (filter.protocol_L3 == ANY || filter.protocol_L3 == packet.protocol_L3)
+					check |= 1;
+				else
+				{
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+					
+			}
+			else if (filter.protocol_L3 == icmp ) {
+				if (filter.icmpType != NO && packet.protocol_L3 == icmp) {
+					if (filter.icmpType == ANY || filter.icmpType == packet.icmpType)
+						check |= 1;
+					else
+					{
+						if (filter.permit == false)
+							continue;
+						return false;
+					}
+				}
+				else
+				{
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+			}
+			
+
+
+			if (filter.src_port != NO)
+				if (filter.src_port == ANY || filter.src_port == packet.src_port)
+					check |= 1;
+				else
+				{
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+
+			if (filter.dst_port != NO)
+				if (filter.dst_port == ANY || filter.dst_port == packet.dst_port)
+					check |= 1;
+				else
+				{
+					if (filter.permit == false)
+						continue;
+					return false;
+				}
+		}
+
+		if (check == 1)
+			return permision;
+
+			
+	
+	}
+
+
+	return true;
+}
